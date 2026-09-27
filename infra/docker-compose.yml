@@ -1,0 +1,62 @@
+name: sentinelap
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sentinelap
+      POSTGRES_USER: sentinelap
+      POSTGRES_PASSWORD: sentinelap
+    ports:
+      - "5432:5432"
+    volumes:
+      - sentinelap_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinelap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ml-service:
+    build:
+      context: ../ml-service
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/sentinelap
+      DB_USER: sentinelap
+      DB_PASSWORD: sentinelap
+      ML_SERVICE_URL: http://ml-service:8000
+      SEED_DEMO_DATA: "true"
+      JWT_SECRET: local-dev-secret-change-in-production-32bytes-min
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:4173
+      QBO_ENABLED: "false"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  sentinelap_postgres_data:

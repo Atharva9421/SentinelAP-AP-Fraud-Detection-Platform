@@ -1,0 +1,71 @@
+# Render.com blueprint - https://render.com/docs/blueprint-spec
+#
+# Deploy: push this repo to GitHub, then in the Render dashboard choose
+# "New > Blueprint" and point it at the repo. Render will create the
+# database and all three services below in one go.
+#
+# The database URL and the internal backend<->ml-service link wire up
+# automatically via fromDatabase/fromService. Two values still can't be, because
+# of the chicken-and-egg problem of the frontend and backend needing each
+# other's PUBLIC urls before either has been deployed yet - Render will prompt
+# for them (as blank "sync: false" values) during blueprint creation, and the
+# README's "Deploying to Render" section walks through filling them in after
+# the first deploy:
+#   1. frontend's VITE_API_BASE_URL -> the backend service's public Render URL
+#   2. backend's ALLOWED_ORIGINS    -> the frontend service's public Render URL
+
+databases:
+  - name: sentinelap-db
+    plan: free
+    databaseName: sentinelap
+    user: sentinelap
+
+services:
+  - type: web
+    name: sentinelap-ml-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./ml-service/Dockerfile
+    dockerContext: ./ml-service
+    envVars:
+      - key: MODEL_PATH
+        value: /app/model_store/isolation_forest.joblib
+
+  - type: web
+    name: sentinelap-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sentinelap-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: ML_SERVICE_URL
+        fromService:
+          name: sentinelap-ml-service
+          type: web
+          property: hostport
+      - key: QBO_ENABLED
+        value: "false"
+      - key: ALLOWED_ORIGINS
+        sync: false # set to the deployed frontend URL, e.g. https://sentinelap-frontend.onrender.com
+
+  - type: web
+    name: sentinelap-frontend
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    rootDir: frontend
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # set to the deployed backend URL, e.g. https://sentinelap-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

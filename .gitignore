@@ -1,0 +1,29 @@
+# Backend (Maven / Java)
+backend/target/
+*.class
+
+# ML service (Python)
+ml-service/.venv/
+ml-service/__pycache__/
+ml-service/**/__pycache__/
+ml-service/*.pyc
+ml-service/model_store/
+ml-service/.pytest_cache/
+
+# Frontend (Node)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Env files
+.env
+*.env
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.iml
