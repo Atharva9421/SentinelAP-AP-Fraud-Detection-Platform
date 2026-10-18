@@ -19,7 +19,7 @@ CREATE TABLE vendors (
     bank_account_last4      VARCHAR(4),
     bank_routing_number     VARCHAR(20),
     bank_account_updated_at TIMESTAMPTZ,
-    risk_score              NUMERIC(5,2) NOT NULL DEFAULT 0,
+    risk_score              DOUBLE PRECISION NOT NULL DEFAULT 0,
     is_verified             BOOLEAN NOT NULL DEFAULT FALSE,
     source                  VARCHAR(30) NOT NULL DEFAULT 'SYNTHETIC',
     external_id             VARCHAR(100),
@@ -80,7 +80,7 @@ CREATE TABLE fraud_alerts (
     invoice_id          UUID REFERENCES invoices(id) ON DELETE CASCADE,
     alert_type          VARCHAR(50) NOT NULL,
     severity            VARCHAR(20) NOT NULL,
-    risk_score          NUMERIC(5,2) NOT NULL,
+    risk_score          DOUBLE PRECISION NOT NULL,
     reason              TEXT NOT NULL,
     status              VARCHAR(30) NOT NULL DEFAULT 'OPEN',
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -91,3 +91,5 @@ CREATE TABLE fraud_alerts (
 CREATE INDEX idx_alerts_vendor ON fraud_alerts (vendor_id);
 CREATE INDEX idx_alerts_status ON fraud_alerts (status);
 CREATE INDEX idx_alerts_created_at ON fraud_alerts (created_at);
+
+

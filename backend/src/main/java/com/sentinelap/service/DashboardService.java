@@ -9,6 +9,7 @@ import com.sentinelap.repo.InvoiceRepository;
 import com.sentinelap.repo.VendorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,6 +25,7 @@ public class DashboardService {
     private final FraudAlertRepository fraudAlertRepository;
     private final AlertService alertService;
 
+    @Transactional(readOnly = true)
     public DashboardSummaryDto summary() {
         long totalVendors = vendorRepository.count();
         List<Invoice> allInvoices = invoiceRepository.findAll();
